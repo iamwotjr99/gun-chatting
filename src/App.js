@@ -29,7 +29,7 @@ function App() {
 
   return (
     <div className='App'>
-      <Login />
+      <Login gun={gun}/>
       <Chatting gun={gun}/>
     </div>
   );
