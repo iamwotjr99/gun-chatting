@@ -1,9 +1,9 @@
 import './css/Login.css';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 
 function Login({gun}) {
-    const user = gun.user();
+    const user = gun.user().recall({sessionStorage: true});
 
     const [userForm, setUserForm] = useState({
         alias: "",
@@ -27,6 +27,31 @@ function Login({gun}) {
             password: "",
         });
     };
+
+    const loginBtn = () => {
+        user.auth(userForm.alias, userForm.password, (res) => {
+            console.log("loginBtn: ", res);
+        })
+
+        setUserForm({
+            alias: "",
+            password: "",
+        })
+    }
+
+    const logoutBtn = () => {
+        user.leave((res)=> {
+            console.log('logoutBtn: ', res);
+        })
+    }
+
+    const checkBtn = () => {
+        console.log(user);
+        gun.on('auth', (ack) => {
+            console.log('Authentication was successful: ', ack);
+        })
+    }
+
     return (
         <div className="login">
             <h1>Hey! Login or join our service 😆</h1>
@@ -42,7 +67,10 @@ function Login({gun}) {
                 name="password"
                 value={userForm.password}
             />
-            <button onClick={submit}>Submit</button>
+            <button onClick={submit}>Join</button>
+            <button onClick={loginBtn}>Login</button>
+            <button onClick={logoutBtn}>Logout</button>
+            <button onClick={checkBtn}>Check</button>
         </div>
     )
 }

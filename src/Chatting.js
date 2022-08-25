@@ -50,15 +50,15 @@ function Chatting({ gun }) {
 
   function saveMessage() {
     const messages = gun.get(roomState);
-        messages.set({
-        name: formState.name,
-        message: formState.message,
-        createdAt: Date.now(),
-        });
-        setForm({
-        name: "",
-        message: "",
-        })
+    messages.set({
+      name: formState.name,
+      message: formState.message,
+      createdAt: Date.now(),
+    });
+    setForm({
+      name: "",
+      message: "",
+    })
   }
 
   return (
