@@ -31,7 +31,7 @@ function App() {
     <div className='App'>
       <Login gun={gun}/>
       <Chatting gun={gun}/>
-    </div>
+    </div> 
   );
 }
 

@@ -1,6 +1,6 @@
 import './css/Login.css';
 import { useState, useEffect } from 'react';
-
+import SEA from 'gun/sea';
 
 function Login({gun}) {
     const user = gun.user().recall({sessionStorage: true});
@@ -9,6 +9,8 @@ function Login({gun}) {
         alias: "",
         password: "",
     });
+
+    const [loginState, setLoginState] = useState(false);
 
     const onChange = (e) => {
         setUserForm({
@@ -31,6 +33,7 @@ function Login({gun}) {
     const loginBtn = () => {
         user.auth(userForm.alias, userForm.password, (res) => {
             console.log("loginBtn: ", res);
+            setLoginState(true);
         })
 
         setUserForm({
@@ -39,9 +42,10 @@ function Login({gun}) {
         })
     }
 
-    const logoutBtn = () => {
-        user.leave((res)=> {
+    const logoutBtn = async () => {
+        await user.leave((res)=> {
             console.log('logoutBtn: ', res);
+            setLoginState(false);
         })
     }
 
@@ -52,25 +56,46 @@ function Login({gun}) {
         })
     }
 
+    const decryptUser = async () => {
+        console.log(user._.sea);
+        if(user.is) {
+            console.log(await SEA.decrypt(user.is.alias, user._.sea));
+        }
+    }
+
+    useEffect(() => {
+        decryptUser();
+        gun.user(user.is.pub).once(console.log);
+    }, [])
+
     return (
         <div className="login">
-            <h1>Hey! Login or join our service 😆</h1>
-            <input
-                onChange={onChange}
-                placeholder="Alias"
-                name="alias"
-                value={userForm.alias}
-            />
-            <input
-                onChange={onChange}
-                placeholder="Password"
-                name="password"
-                value={userForm.password}
-            />
-            <button onClick={submit}>Join</button>
-            <button onClick={loginBtn}>Login</button>
-            <button onClick={logoutBtn}>Logout</button>
-            <button onClick={checkBtn}>Check</button>
+            {user.is ? 
+                <div>
+                    Welcome! 
+                    <button onClick={logoutBtn}>Logout</button>
+                    <button onClick={checkBtn}>Check</button>
+                </div>:
+                <div>
+                    <h1>Hey! Login or join our service 😆</h1>
+                    <input
+                        onChange={onChange}
+                        placeholder="Alias"
+                        name="alias"
+                        value={userForm.alias}
+                    />
+                    <input
+                        onChange={onChange}
+                        placeholder="Password"
+                        name="password"
+                        value={userForm.password}
+                    />
+                    <button onClick={submit}>Join</button>
+                    <button onClick={loginBtn}>Login</button>
+                    <button onClick={logoutBtn}>Logout</button>
+                    <button onClick={checkBtn}>Check</button>
+            </div>}
+            
         </div>
     )
 }
