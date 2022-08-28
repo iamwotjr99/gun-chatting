@@ -10,7 +10,18 @@ function Login({gun}) {
         password: "",
     });
 
+    const [alias, setAlias] = useState("");
+    
     const [loginState, setLoginState] = useState(false);
+
+    useEffect(() => {
+        if(user.is) {
+            gun.user(user.is.pub).once((res) => {
+                console.log("userInfo for pub", res);
+                setAlias(res.alias);
+            });
+        }
+    }, [])
 
     const onChange = (e) => {
         setUserForm({
@@ -56,23 +67,13 @@ function Login({gun}) {
         })
     }
 
-    const decryptUser = async () => {
-        console.log(user._.sea);
-        if(user.is) {
-            console.log(await SEA.decrypt(user.is.alias, user._.sea));
-        }
-    }
-
-    useEffect(() => {
-        decryptUser();
-        gun.user(user.is.pub).once(console.log);
-    }, [])
 
     return (
         <div className="login">
             {user.is ? 
                 <div>
                     Welcome! 
+                    {alias}
                     <button onClick={logoutBtn}>Logout</button>
                     <button onClick={checkBtn}>Check</button>
                 </div>:
