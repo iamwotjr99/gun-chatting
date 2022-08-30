@@ -25,7 +25,7 @@ function App() {
   }
 
   useEffect(() => {
-    testSEA();
+    // testSEA();
   }, [])
 
   return (

@@ -1,26 +1,33 @@
 import './css/Chatting.css';
 import {useState, useEffect, useReducer} from 'react';
-import {useLocation} from 'react-router-dom';
+import {useLocation, useNavigate} from 'react-router-dom';
+import CryptoJS from 'crypto-js';
+import axios from 'axios';
 
 const initialState = {
     messages: [],
   }
   
-const reducer = (state, message) => {
+const reducer = (state1, message) => {
+  console.log("state1111:", state1.messages);
    return {
-     messages: [message, ...state.message],
+     messages: [message, ...state1.messages],
    }
  }
 
 function Chatting({ gun }) {
   const { state } = useLocation();
-  console.log("prop:",state);
+
+  const navigate = useNavigate();
 
   const user = gun.user().recall({sessionStorage: true});
   console.log('user:', user);
-  
+
   const [roomState, setRoom] = useState("");
   let room;
+
+  const [originalHash, setOriginalHash] = useState("");
+  const [firstHash, setFirstHash] = useState("");
 
   const onChangeRoom = (e) => {
     room = e.target.value;
@@ -30,8 +37,46 @@ function Chatting({ gun }) {
     setRoom(room);
   };
 
+  const onHashMessage = async () => {
+    const wholeMessages = gun.put(roomState);
+    console.log(wholeMessages._.graph);
+    const hash = CryptoJS.SHA256(JSON.stringify(wholeMessages._.graph)).toString();
+
+    if(originalHash !== hash) {
+      axios.post(`http://203.247.240.236:1206/api/recordhash`, {
+        "RoomNumber": roomState,
+        "HostID": state.alias,
+        "DateTime": Date().toLocaleString(),
+        "Hash": hash
+      }).then((res) => {
+        onQuery();
+        window.alert("Hash Recorded: \n" + res.data.Hash);
+        console.log(res.data.Hash);
+      });
+    };
+  };
+
+  function onQuery(roomState) {
+    axios.get(`http://203.247.240.236:1206/api/query/${roomState}`).then((res) => {
+      console.log(res);
+      setOriginalHash(res.data.Hash);
+    })
+  }
+
+  function onChainQuery() {
+    console.log(roomState);
+    axios.get(`http://203.247.240.236:1206/api/query${roomState}`).then((res) => {
+      console.log(res);
+      if(res.data !== "Yet") {
+        setOriginalHash(res.data.Hash);
+      } else {
+        window.alert("First Time Record");
+        console.log(res);
+      }
+    })
+  }
+
   const [formState, setForm] = useState({
-    name: "",
     message: "",
   });
 
@@ -40,6 +85,7 @@ function Chatting({ gun }) {
   useEffect(() => {
     console.log("useEffect Hook ");
     const messages = gun.get(roomState);
+    console.log(messages);
     messages.map().once((m) => {
       console.log(m);
       dispatch({
@@ -59,14 +105,20 @@ function Chatting({ gun }) {
 
   function saveMessage() {
     const messages = gun.get(roomState);
+    const createdAt = new Date().toLocaleString();
     messages.set({
-      name: formState.name,
+      name: state.alias,
       message: formState.message,
-      createdAt: Date.now(),
+      createdAt: createdAt,
     });
     setForm({
-      name: "",
       message: "",
+    })
+  }
+
+  const logoutBtn = async () => {
+    await user.leave().then(() => {
+      navigate('/');
     })
   }
 
@@ -74,18 +126,13 @@ function Chatting({ gun }) {
     <div className="chatting">
       <div className='chat_user_info'>
         userName: {state.alias}
+        <button onClick={logoutBtn}>logout</button>
       </div>
       <b>Welcome to joining ✨✨ {roomState} 👩‍👧‍👧</b>
       <div>
         <input onChange={onChangeRoom} placeholder="Room" name="room" />
         <button onClick={onResetRoom}>Join Room</button>
       </div>
-      <input
-        onChange={onChange}
-        placeholder="Name"
-        name="name"
-        value={formState.name}
-      />
       <input
         onChange={onChange}
         placeholder="Message"
@@ -101,8 +148,8 @@ function Chatting({ gun }) {
         </div>
       ))}
       <div>
-        <button>Recording on message</button>
-        <button>Query Hash</button>
+        <button onClick={onHashMessage}>Recording on message</button>
+        <button onClick={onChainQuery}>Query Hash</button>
       </div>
     </div>
   );
