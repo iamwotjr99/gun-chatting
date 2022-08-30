@@ -2,6 +2,7 @@ import './css/App.css';
 import Gun from 'gun';
 import SEA from 'gun/sea';
 
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import {useEffect} from 'react';
 
 import Chatting from './Chatting';
@@ -29,8 +30,12 @@ function App() {
 
   return (
     <div className='App'>
-      <Login gun={gun}/>
-      <Chatting gun={gun}/>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Login gun={gun}/>}/>
+          <Route path="/chat" element={<Chatting gun={gun}/>}/>
+        </Routes>
+      </BrowserRouter>
     </div> 
   );
 }

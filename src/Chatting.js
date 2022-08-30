@@ -1,5 +1,6 @@
 import './css/Chatting.css';
 import {useState, useEffect, useReducer} from 'react';
+import {useLocation} from 'react-router-dom';
 
 const initialState = {
     messages: [],
@@ -12,11 +13,19 @@ const reducer = (state, message) => {
  }
 
 function Chatting({ gun }) {
+  const { state } = useLocation();
+  console.log("prop:",state);
+
+  const user = gun.user().recall({sessionStorage: true});
+  console.log('user:', user);
+  
   const [roomState, setRoom] = useState("");
   let room;
+
   const onChangeRoom = (e) => {
     room = e.target.value;
   };
+
   const onResetRoom = () => {
     setRoom(room);
   };
@@ -26,7 +35,7 @@ function Chatting({ gun }) {
     message: "",
   });
 
-  const [state, dispatch] = useReducer(reducer, initialState);
+  const [state1, dispatch] = useReducer(reducer, initialState);
 
   useEffect(() => {
     console.log("useEffect Hook ");
@@ -63,6 +72,9 @@ function Chatting({ gun }) {
 
   return (
     <div className="chatting">
+      <div className='chat_user_info'>
+        userName: {state.alias}
+      </div>
       <b>Welcome to joining ✨✨ {roomState} 👩‍👧‍👧</b>
       <div>
         <input onChange={onChangeRoom} placeholder="Room" name="room" />
@@ -81,7 +93,7 @@ function Chatting({ gun }) {
         value={formState.message}
       />
       <button onClick={saveMessage}>Send Message</button>
-      {state.messages.map((message, createdAt) => (
+      {state1.messages.map((message, createdAt) => (
         <div key={createdAt}>
           <h2>{message.message}</h2>
           <h3>From: {message.name}</h3>

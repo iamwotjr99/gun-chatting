@@ -1,9 +1,12 @@
 import './css/Login.css';
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import SEA from 'gun/sea';
 
 function Login({gun}) {
     const user = gun.user().recall({sessionStorage: true});
+
+    const navigate = useNavigate();
 
     const [userForm, setUserForm] = useState({
         alias: "",
@@ -12,7 +15,6 @@ function Login({gun}) {
 
     const [alias, setAlias] = useState("");
     
-    const [loginState, setLoginState] = useState(false);
 
     useEffect(() => {
         if(user.is) {
@@ -30,8 +32,8 @@ function Login({gun}) {
         });
     };
 
-    const submit = () => {
-        user.create(userForm.alias, userForm.password, (res) => {
+    const submit = async () => {
+        await user.create(userForm.alias, userForm.password, (res) => {
             console.log(res);
         });
 
@@ -41,23 +43,31 @@ function Login({gun}) {
         });
     };
 
-    const loginBtn = () => {
-        user.auth(userForm.alias, userForm.password, (res) => {
+    const loginBtn = async () => {
+        await user.auth(userForm.alias, userForm.password, (res) => {
             console.log("loginBtn: ", res);
-            setLoginState(true);
+            if(!res.err) {
+                navigate('/chat', {state: {
+                    alias: res.put.alias,
+                    pub: res.put.pub
+                }});
+            }
+
+            setUserForm({
+                alias: "",
+                password: "",
+            })
         })
 
-        setUserForm({
-            alias: "",
-            password: "",
-        })
     }
 
     const logoutBtn = async () => {
         await user.leave((res)=> {
             console.log('logoutBtn: ', res);
-            setLoginState(false);
         })
+
+        window.location.reload();
+        console.log('logout');
     }
 
     const checkBtn = () => {
