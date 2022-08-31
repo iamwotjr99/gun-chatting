@@ -9,10 +9,10 @@ const initialState = {
     messages: [],
   }
   
-const reducer = (state1, message) => {
-  console.log("state1111:", state1.messages);
+const reducer = (stateMsg, message) => {
+  console.log("stateMsg:", stateMsg.messages);
    return {
-     messages: [message, ...state1.messages],
+     messages: [message, ...stateMsg.messages],
    }
  }
 
@@ -22,10 +22,11 @@ function Chatting({ gun }) {
   const navigate = useNavigate();
 
   const user = gun.user().recall({sessionStorage: true});
-  console.log('user:', user);
 
   const [roomState, setRoom] = useState("");
   let room;
+
+  const [userList, setUserList] = useState([]);
 
   const [originalHash, setOriginalHash] = useState("");
   const [firstHash, setFirstHash] = useState("");
@@ -37,8 +38,71 @@ function Chatting({ gun }) {
   const onResetRoom = () => {
     setRoom(room);
     const currentRoom = gun.get(room)
-    currentRoom.get('users').set(state);
+    currentRoom.get('user').get(state.alias).put(state);
+    console.log(user);
   };
+
+  const [formState, setForm] = useState({
+    message: "",
+  });
+
+  const [stateMsg, dispatch] = useReducer(reducer, initialState);
+
+  const test = async () => {
+    console.log(await SEA.encrypt('awd', user._.sea));
+  }
+
+  useEffect(() => {
+    // test();
+    console.log("useEffect Hook ");
+    const messages = gun.get(roomState);
+    const users = gun.get(roomState).get("user");
+    // console.log("users in room:", JSON.stringify(users._.put));
+    console.log("roomState:", messages);
+    messages.map().once(async (m) => {
+      console.log("each message:", m);
+      const encryptedMsg = await SEA.encrypt(m, user._.sea.epub);
+      console.log("encrypted message by user epub: ", encryptedMsg);
+      dispatch({
+        name: m.name,
+        message: m.message,
+        createdAt: m.createdAt
+      });
+    });
+    users.map().once((u) => {
+      console.log("each user:", u);
+      userList.push(u);
+    });
+    onQuery();
+    console.log("userList: ", userList);
+  }, [roomState, userList])
+
+  function onChange(e) {
+    setForm({
+      ...formState,
+      [e.target.name]: e.target.value
+    });
+  }
+
+  function saveMessage() {
+    const messages = gun.get(roomState);
+    console.log("in saveMessage:", messages);
+    const createdAt = new Date().toLocaleString();
+    messages.set({
+      name: state.alias,
+      message: formState.message,
+      createdAt: createdAt,
+    });
+    setForm({
+      message: "",
+    })
+  }
+
+  const logoutBtn = async () => {
+    await user.leave().then(() => {
+      navigate('/');
+    })
+  }
 
   const onHashMessage = async () => {
     const wholeMessages = gun.put(roomState);
@@ -81,66 +145,6 @@ function Chatting({ gun }) {
     })
   }
 
-  const [formState, setForm] = useState({
-    message: "",
-  });
-
-  const [stateMsg, dispatch] = useReducer(reducer, initialState);
-
-  const test = async () => {
-    console.log(await SEA.encrypt('awd', user._.sea));
-  }
-
-  useEffect(() => {
-    // test();
-    console.log("useEffect Hook ");
-    const messages = gun.get(roomState);
-    const users = gun.get(roomState).get("users");
-    console.log("users in room:", users);
-    console.log("roomState:", messages);
-    messages.map().once(async (m) => {
-      console.log("each message:", m);
-      const encryptedMsg = await SEA.encrypt(m, user._.sea.epub);
-      console.log(encryptedMsg);
-      dispatch({
-        name: m.name,
-        message: m.message,
-        createdAt: m.createdAt
-      });
-    });
-    users.map().once((u) => {
-      console.log("each user:", u);
-    });
-    onQuery();
-  }, [roomState])
-
-  function onChange(e) {
-    setForm({
-      ...formState,
-      [e.target.name]: e.target.value
-    });
-  }
-
-  function saveMessage() {
-    const messages = gun.get(roomState);
-    console.log("in saveMessage:", messages);
-    const createdAt = new Date().toLocaleString();
-    messages.set({
-      name: state.alias,
-      message: formState.message,
-      createdAt: createdAt,
-    });
-    setForm({
-      message: "",
-    })
-  }
-
-  const logoutBtn = async () => {
-    await user.leave().then(() => {
-      navigate('/');
-    })
-  }
-
   return (
     <div className="chatting">
       <div className='chat_user_info'>
@@ -159,11 +163,25 @@ function Chatting({ gun }) {
         value={formState.message}
       />
       <button onClick={saveMessage}>Send Message</button>
+      {userList[0] ? <div className='chat_people'>
+        User in {roomState} =&gt; &nbsp;
+        {userList.map((user) => {
+          return (
+            user.alias + "  "
+          )
+        })}
+      </div> : <div></div>}
       {stateMsg.messages.map((message, createdAt) => (
         <div key={createdAt}>
-          <h2>{message.message}</h2>
-          <h3>From: {message.name}</h3>
-          <p>Date: {message.createdAt}</p>
+          {message.message ? 
+            <div>
+              <h2>{message.message}</h2>
+              <h3>From: {message.name}</h3>
+              <p>Date: {message.createdAt}</p>
+            </div> 
+              : <div></div>
+          }
+          
         </div>
       ))}
       <div>
