@@ -49,7 +49,7 @@ function Login({gun}) {
             if(!res.err) {
                 navigate('/chat', {state: {
                     alias: res.put.alias,
-                    pub: res.put.pub
+                    pub: res.put.pub,
                 }});
             }
 
@@ -93,12 +93,14 @@ function Login({gun}) {
                         onChange={onChange}
                         placeholder="Alias"
                         name="alias"
+                        type="text"
                         value={userForm.alias}
                     />
                     <input
                         onChange={onChange}
                         placeholder="Password"
                         name="password"
+                        type="password"
                         value={userForm.password}
                     />
                     <button onClick={submit}>Join</button>
