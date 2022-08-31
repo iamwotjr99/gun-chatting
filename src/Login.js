@@ -50,6 +50,7 @@ function Login({gun}) {
                 navigate('/chat', {state: {
                     alias: res.put.alias,
                     pub: res.put.pub,
+                    epub: res.put.epub,
                 }});
             }
 

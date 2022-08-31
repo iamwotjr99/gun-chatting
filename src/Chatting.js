@@ -22,6 +22,7 @@ function Chatting({ gun }) {
   const navigate = useNavigate();
 
   const user = gun.user().recall({sessionStorage: true});
+  const myPair = user._.sea;
 
   const [roomState, setRoom] = useState("");
   let room;
@@ -48,32 +49,11 @@ function Chatting({ gun }) {
 
   const [stateMsg, dispatch] = useReducer(reducer, initialState);
 
-  const test = async () => {
-    console.log(await SEA.encrypt('awd', user._.sea));
-  }
-
   useEffect(() => {
-    // test();
     console.log("useEffect Hook ");
-    const messages = gun.get(roomState);
-    const users = gun.get(roomState).get("user");
-    // console.log("users in room:", JSON.stringify(users._.put));
-    console.log("roomState:", messages);
-    messages.map().once(async (m) => {
-      console.log("each message:", m);
-      const encryptedMsg = await SEA.encrypt(m, user._.sea.epub);
-      console.log("encrypted message by user epub: ", encryptedMsg);
-      dispatch({
-        name: m.name,
-        message: m.message,
-        createdAt: m.createdAt
-      });
-    });
-    users.map().once((u) => {
-      console.log("each user:", u);
-      userList.push(u);
-    });
     onQuery();
+    getUserList();
+    getMessage();
     console.log("userList: ", userList);
   }, [roomState, userList])
 
@@ -84,17 +64,70 @@ function Chatting({ gun }) {
     });
   }
 
-  function saveMessage() {
+  async function saveMessage() {
     const messages = gun.get(roomState);
-    console.log("in saveMessage:", messages);
     const createdAt = new Date().toLocaleString();
-    messages.set({
-      name: state.alias,
-      message: formState.message,
-      createdAt: createdAt,
+    let encryptAlias = await SEA.encrypt(state.alias, myPair.epub);
+    let encryptMessage = await SEA.encrypt(formState.message, myPair.epub);
+    let encryptTime = await SEA.encrypt(createdAt, myPair.epub);
+    console.log('save Message epub Key: ', myPair.epub);
+    // const signAlias = await SEA.sign(encryptAlias, myPair);
+    // const signMessage = await SEA.sign(encryptMessage, myPair);
+    // const singTime = await SEA.sign(encryptTime, myPair);
+    await messages.set({
+      name: encryptAlias,
+      message: encryptMessage,
+      createdAt: encryptTime
     });
     setForm({
       message: "",
+    })
+  }
+
+  function getMessage() {
+    const messages = gun.get(roomState);
+    console.log("roomState: ", messages);
+    messages.map().once(async (msg) => {
+      console.log("each message: ", msg);
+      if(msg !== undefined) {
+        userList.map(async (user) => {
+          // let veriMessage = await SEA.verify(msg.message, user.pub);
+          // let veriAlias = await SEA.verify(msg.name, user.pub);
+          // let veriTime = await SEA.verify(msg.createdAt, user.pub);
+          let decryptedMessage = await SEA.decrypt(msg.message, user.epub);
+          let decryptedAlias = await SEA.decrypt(msg.name, user.epub);
+          let decryptedTime = await SEA.decrypt(msg.createdAt, user.epub);
+          if(decryptedAlias !== undefined) {
+            dispatch({
+              name: decryptedAlias,
+              message: decryptedMessage,
+              createdAt: decryptedTime,
+            });
+          }
+        });
+      }
+      // const verifiedMsg = await SEA.verify(m, myPair);
+      // console.log("verify message by user pub: ", verifiedMsg);
+      // let decryptedAlias = await SEA.decrypt(m.name, myPair.epub);
+      // let decryptedMessage = await SEA.decrypt(m.message, myPair.epub);
+      // let decryptedTime = await SEA.decrypt(m.createdAt, myPair.epub);
+      // console.log('get Message epub Key: ', myPair.epub);
+      // // const encryptedMsg = await SEA.encrypt(m, myPair.epub);
+      // console.log("decrypted message by user pub: ", decryptedMessage);
+      // // console.log("encrypted message by user epub: ", encryptedMsg);
+      // dispatch({
+      //   name: decryptedAlias,
+      //   message: decryptedMessage,
+      //   createdAt: decryptedTime,
+      // });
+    });
+  }
+
+  function getUserList() {
+    const users = gun.get(roomState).get("user");
+    users.map().once((user) => {
+      console.log("each user: ", user);
+      userList.push(user);
     })
   }
 
@@ -108,7 +141,7 @@ function Chatting({ gun }) {
     const wholeMessages = gun.put(roomState);
     console.log("wholeMessages: ", wholeMessages);
     console.log(wholeMessages._.graph);
-    console.log("encryptMessage: ", await SEA.encrypt(wholeMessages._.graph, user._.sea));
+    console.log("encryptMessage: ", await SEA.encrypt(wholeMessages._.graph, myPair));
     const hash = CryptoJS.SHA256(JSON.stringify(wholeMessages._.graph)).toString();
 
     if(originalHash !== hash) {
@@ -148,7 +181,7 @@ function Chatting({ gun }) {
   return (
     <div className="chatting">
       <div className='chat_user_info'>
-        userName: {state.alias}
+        <b>user Name: {state.alias}</b>
         <button onClick={logoutBtn}>logout</button>
       </div>
       <b>Welcome to joining ✨✨ {roomState} 👩‍👧‍👧</b>
@@ -164,12 +197,12 @@ function Chatting({ gun }) {
       />
       <button onClick={saveMessage}>Send Message</button>
       {userList[0] ? <div className='chat_people'>
-        User in {roomState} =&gt; &nbsp;
+        <b>User in {roomState} =&gt; &nbsp;
         {userList.map((user) => {
           return (
             user.alias + "  "
           )
-        })}
+        })}</b>
       </div> : <div></div>}
       {stateMsg.messages.map((message, createdAt) => (
         <div key={createdAt}>
