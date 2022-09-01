@@ -68,8 +68,11 @@ function Chatting({ gun }) {
     const messages = gun.get(roomState);
     const createdAt = new Date().toLocaleString();
     let encryptAlias = await SEA.encrypt(state.alias, myPair.epub);
+    console.log('1: alias encrypt');
     let encryptMessage = await SEA.encrypt(formState.message, myPair.epub);
+    console.log('2: messge encrypt');
     let encryptTime = await SEA.encrypt(createdAt, myPair.epub);
+    console.log('3: time encrypt');
     console.log('save Message epub Key: ', myPair.epub);
     // const signAlias = await SEA.sign(encryptAlias, myPair);
     // const signMessage = await SEA.sign(encryptMessage, myPair);
@@ -87,25 +90,31 @@ function Chatting({ gun }) {
   function getMessage() {
     const messages = gun.get(roomState);
     console.log("roomState: ", messages);
+    const users = gun.get(roomState).get("user");
+    console.log(users);
     messages.map().once(async (msg) => {
       console.log("each message: ", msg);
-      if(msg !== undefined) {
-        userList.map(async (user) => {
-          // let veriMessage = await SEA.verify(msg.message, user.pub);
-          // let veriAlias = await SEA.verify(msg.name, user.pub);
-          // let veriTime = await SEA.verify(msg.createdAt, user.pub);
-          let decryptedMessage = await SEA.decrypt(msg.message, user.epub);
-          let decryptedAlias = await SEA.decrypt(msg.name, user.epub);
-          let decryptedTime = await SEA.decrypt(msg.createdAt, user.epub);
-          if(decryptedAlias !== undefined) {
-            dispatch({
-              name: decryptedAlias,
-              message: decryptedMessage,
-              createdAt: decryptedTime,
-            });
-          }
-        });
-      }
+      
+      users.map().once(async (user) => {
+        console.log('each message, each user', msg, user);
+        // let veriMessage = await SEA.verify(msg.message, user.pub);
+        // let veriAlias = await SEA.verify(msg.name, user.pub);
+        // let veriTime = await SEA.verify(msg.createdAt, user.pub);
+        let decryptedAlias = await SEA.decrypt(msg.name, user.epub);
+        console.log('4: alias decrypt', decryptedAlias);
+        let decryptedMessage = await SEA.decrypt(msg.message, user.epub);
+        console.log('5: message decrypt', decryptedMessage);
+        let decryptedTime = await SEA.decrypt(msg.createdAt, user.epub);
+        console.log('6: time decrypt', decryptedTime);
+        if(decryptedAlias !== undefined) {
+          dispatch({
+            name: decryptedAlias,
+            message: decryptedMessage,
+            createdAt: decryptedTime,
+          });
+        }
+      });
+      
       // const verifiedMsg = await SEA.verify(m, myPair);
       // console.log("verify message by user pub: ", verifiedMsg);
       // let decryptedAlias = await SEA.decrypt(m.name, myPair.epub);
